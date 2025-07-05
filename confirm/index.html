@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Conferma Iscrizione</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .info { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Conferma Iscrizione</h1>
+  <div id="info" class="info">Caricamento...</div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyAxGm1Y26UZzxnYD9TZy9C97saff9oALBA",
+      authDomain: "iscrizioni-a-evento.firebaseapp.com",
+      projectId: "iscrizioni-a-evento",
+      storageBucket: "iscrizioni-a-evento.firebasestorage.app",
+      messagingSenderId: "226347394046",
+      appId: "1:226347394046:web:4bf0724fdf84e3cb02d6af",
+      measurementId: "G-51WTBGPGVG"
+  };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+
+    async function caricaIscritto() {
+      const id = getQueryParam('idsub')  || getQueryParam('id');
+      const infoDiv = document.getElementById('info');
+
+      if (!id) {
+        infoDiv.textContent = 'Nessun ID iscritto fornito.';
+        return;
+      }
+
+      try {
+        const doc = await db.collection('iscrizioni').doc(id).get();
+        if (!doc.exists) {
+          infoDiv.textContent = 'Iscritto non trovato.';
+          return;
+        }
+        const data = doc.data();
+        infoDiv.innerHTML = `
+          <p><strong>Nome:</strong> ${data.nome}</p>
+          <p><strong>Email:</strong> ${data.email}</p>
+          <p><strong>Telefono:</strong> ${data.telefono}</p>
+          <p><strong>Evento:</strong> ${data.evento}</p>
+          <p><strong>Messaggio:</strong> ${data.messaggio || '(nessuno)'}</p>
+        `;
+      } catch (error) {
+        infoDiv.textContent = 'Errore nel caricamento dati.';
+        console.error(error);
+      }
+    }
+
+    caricaIscritto();
+  </script>
+</body>
+</html>
