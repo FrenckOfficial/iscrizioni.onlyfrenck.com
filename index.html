@@ -14,7 +14,7 @@
     <input type="text" name="nome" placeholder="Nome e Cognome" required />
     <input type="email" name="email" placeholder="Email" required />
     <input type="tel" name="telefono" placeholder="Numero di Telefono" required />
-    <select name="evento" id="evento">
+    <select name="evento" id="evento" required>
         <option value="" disabled selected>Seleziona l'evento a cui desideri partecipare</option>
         <option value="Gita in casone">Gita in casone</option>
     </select>
@@ -22,70 +22,72 @@
     <button type="submit">Invia Iscrizione</button>
   </form>
 
+  <!-- Librerie -->
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // Inizializza EmailJS (qui fuori dal listener per inizializzazione unica)
-  emailjs.init("qYcvjpQwBb9zrM1XQ");
+    // Inizializza EmailJS
+    emailjs.init("qYcvjpQwBb9zrM1XQ"); // ⚠️ Lascia questo se è il tuo USER_ID corretto
 
-  const firebaseConfig = {
-      apiKey: "AIzaSyAxGm1Y26UZzxnYD9TZy9C97saff9oALBA",
-      authDomain: "iscrizioni-a-evento.firebaseapp.com",
-      projectId: "iscrizioni-a-evento",
-      storageBucket: "iscrizioni-a-evento.firebasestorage.app",
-      messagingSenderId: "226347394046",
-      appId: "1:226347394046:web:4bf0724fdf84e3cb02d6af",
-      measurementId: "G-51WTBGPGVG"
-  };
+    // Firebase config
+    const firebaseConfig = {
+        apiKey: "AIzaSyAxGm1Y26UZzxnYD9TZy9C97saff9oALBA",
+        authDomain: "iscrizioni-a-evento.firebaseapp.com",
+        projectId: "iscrizioni-a-evento",
+        storageBucket: "iscrizioni-a-evento.firebasestorage.app",
+        messagingSenderId: "226347394046",
+        appId: "1:226347394046:web:4bf0724fdf84e3cb02d6af",
+        measurementId: "G-51WTBGPGVG"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  const form = document.getElementById('form');
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const data = Object.fromEntries(new FormData(form));
+    const form = document.getElementById('form');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(form));
 
-    try {
-      const docRef = await addDoc(collection(db, "iscrizioni"), data);
-      alert("Iscrizione inviata! Riceverai un'email di conferma.");
-      form.reset();
+      try {
+        const docRef = await addDoc(collection(db, "iscrizioni"), data);
+        alert("Iscrizione inviata! Riceverai un'email di conferma.");
+        form.reset();
 
-      const linkConferma = `https://iscrizioni.onlyfrenck.com/confirm?id=${docRef.id}`;
-      const datiQr = {
-        ...data,
-        link: linkConferma
-      };
+        const linkConferma = `https://iscrizioni.onlyfrenck.com/confirm?id=${docRef.id}`;
 
-      const qrCodeCanvas = document.createElement('canvas');
-      await QRCode.toCanvas(qrCodeCanvas, JSON.stringify(datiQr));
+        const datiQr = {
+          link: linkConferma
+        };
 
-      const qrDataURL = qrCodeCanvas.toDataURL(); // base64 PNG
+        const qrCanvas = document.createElement('canvas');
+        await QRCode.toCanvas(qrCanvas, JSON.stringify(datiQr));
+        const qrCodeBase64 = qrCanvas.toDataURL();
 
-      const emailParams = {
-        to_name: data.nome,
-        to_email: data.email,
-        evento: data.evento,
-        qr_code: qrDataURL
-      };
+        const emailParams = {
+          to_name: data.nome,
+          to_email: data.email,
+          evento: data.evento,
+          qr_code: qrCodeBase64
+        };
 
-      emailjs.send('service_5ikhdrn', 'template_ex4gd19', emailParams)
-        .then(() => {
-          alert("Email di conferma inviata! Controlla la tua casella.");
-        }, (err) => {
-          console.error('Errore EmailJS:', err);
-          alert("Errore durante l'invio email.");
-        });
+        // ⚠️ Inserisci qui il NOME DEL TUO SERVIZIO SMTP DI BREVO
+        emailjs.send('service_5ikhdrn', 'template_ex4gd19', emailParams)
+          .then(() => {
+            alert("Email di conferma inviata! Controlla la tua casella.");
+          }, (err) => {
+            console.error('Errore EmailJS:', err);
+            alert("Errore durante l'invio dell'email.");
+          });
 
-    } catch (error) {
-      console.error("Errore nell'invio:", error);
-      alert("Errore durante l'iscrizione.");
-    }
-  });
-</script>
+      } catch (error) {
+        console.error("Errore nell'invio:", error);
+        alert("Errore durante l'iscrizione.");
+      }
+    });
+  </script>
 </body>
 </html>
