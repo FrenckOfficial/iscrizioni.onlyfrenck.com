@@ -2,19 +2,83 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <title>Conferma Iscrizione</title>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dati Iscrizione - OnlyFrenck</title>
+  <link rel="shortcut icon" href="https://onlyfrenck.com/immagini/logo.png" type="image/x-icon">
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    .info { margin-top: 20px; }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: #f3f9f9;
+      color: #004d40;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 12px;
+      padding: 30px 40px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      max-width: 420px;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 15px;
+      font-weight: 700;
+    }
+    p {
+      font-size: 1.1rem;
+      margin: 10px 0 20px;
+    }
+    .qr-code {
+      margin: 20px auto;
+      width: 180px;
+      height: 180px;
+    }
+    label {
+      font-weight: 600;
+      margin-right: 15px;
+    }
+    .status-options {
+      margin: 20px 0;
+      font-size: 1rem;
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+    }
+    button {
+      background-color: #00796b;
+      border: none;
+      color: white;
+      padding: 12px 30px;
+      border-radius: 25px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      font-size: 1rem;
+    }
+    button:hover {
+      background-color: #004d40;
+    }
+    .message {
+      margin-top: 15px;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
-  <h1>Conferma Iscrizione</h1>
-  <div id="info" class="info">Caricamento...</div>
+  <div class="container" id="content">
+    <h1>Caricamento dati...</h1>
+  </div>
 
-  <script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
     const firebaseConfig = {
       apiKey: "AIzaSyAxGm1Y26UZzxnYD9TZy9C97saff9oALBA",
       authDomain: "iscrizioni-a-evento.firebaseapp.com",
@@ -23,46 +87,78 @@
       messagingSenderId: "226347394046",
       appId: "1:226347394046:web:4bf0724fdf84e3cb02d6af",
       measurementId: "G-51WTBGPGVG"
-  };
+    };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-    function getQueryParam(param) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(param);
-    }
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    const contentDiv = document.getElementById('content');
 
-    async function caricaIscritto() {
-      const id = getQueryParam('idsub')  || getQueryParam('id');
-      const infoDiv = document.getElementById('info');
+    if (!id) {
+      contentDiv.innerHTML = `<p style="color:#900;">ID iscrizione non trovato.</p>`;
+    } else {
+      async function loadData() {
+        const docRef = doc(db, "iscrizioni", id);
+        const docSnap = await getDoc(docRef);
 
-      if (!id) {
-        infoDiv.textContent = 'Nessun ID iscritto fornito.';
-        return;
-      }
-
-      try {
-        const doc = await db.collection('iscrizioni').doc(id).get();
-        if (!doc.exists) {
-          infoDiv.textContent = 'Iscritto non trovato.';
+        if (!docSnap.exists()) {
+          contentDiv.innerHTML = `<p style="color:#900;">Iscrizione non trovata o cancellata.</p>`;
           return;
         }
-        const data = doc.data();
-        infoDiv.innerHTML = `
-          <p><strong>Nome:</strong> ${data.nome}</p>
-          <p><strong>Email:</strong> ${data.email}</p>
-          <p><strong>Telefono:</strong> ${data.telefono}</p>
-          <p><strong>Evento:</strong> ${data.evento}</p>
-          <p><strong>Messaggio:</strong> ${data.messaggio || '(nessuno)'}</p>
-        `;
-      } catch (error) {
-        infoDiv.textContent = 'Errore nel caricamento dati.';
-        console.error(error);
-      }
-    }
 
-    caricaIscritto();
+        const dati = docSnap.data();
+
+        contentDiv.innerHTML = `
+          <h1>Check-in Iscrizione</h1>
+          <p><strong>${dati.nome}</strong></p>
+          <p>Evento: <strong>${dati.evento}</strong></p>
+          <p>Email: <strong>${dati.email}</strong></p>
+          <p>Telefono: <strong>${dati.telefono}</strong></p>
+
+          <canvas id="qrcode" class="qr-code"></canvas>
+
+          <div class="status-options">
+            <label><input type="radio" name="stato" value="presente" ${dati.stato === 'presente' ? 'checked' : ''}> Presente</label>
+            <label><input type="radio" name="stato" value="assente" ${dati.stato === 'assente' ? 'checked' : ''}> Assente</label>
+          </div>
+
+          <button id="btnUpdate">Aggiorna Stato</button>
+          <p class="message" id="message"></p>
+        `;
+
+        // Genera QR code con link pagina
+        const canvas = document.getElementById('qrcode');
+        QRCode.toCanvas(canvas, window.location.href, function(error) {
+          if (error) console.error(error);
+        });
+
+        // Bottone aggiorna
+        document.getElementById('btnUpdate').addEventListener('click', async () => {
+          const statoSelezionato = document.querySelector('input[name="stato"]:checked');
+          const messageP = document.getElementById('message');
+
+          if (!statoSelezionato) {
+            messageP.style.color = 'red';
+            messageP.textContent = 'Seleziona uno stato prima di aggiornare.';
+            return;
+          }
+
+          try {
+            await updateDoc(docRef, { stato: statoSelezionato.value });
+            messageP.style.color = 'green';
+            messageP.textContent = `Stato aggiornato a "${statoSelezionato.value}".`;
+          } catch (e) {
+            messageP.style.color = 'red';
+            messageP.textContent = 'Errore durante l\'aggiornamento.';
+            console.error(e);
+          }
+        });
+      }
+
+      loadData();
+    }
   </script>
 </body>
 </html>

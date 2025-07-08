@@ -1,6 +1,6 @@
 body {
     font-family: 'Roboto', sans-serif;
-    background: url('https://grado.it/it/img/asset/YXNzZXRzL3BhZ2luZS1zaXRvL25hdHVyYS82M2E1ODA0MS05ZDgxLTRhOTEtYTNiMC1iZWMyZDU5YTllNmZfanppaXluNy0xNDQweDc1MC5qcGc/63a58041-9d81-4a91-a3b0-bec2d59a9e6f_jziiyn7-1440x750.jpg?p=poster&s=f878fe033895321aa3113ea8d7e9fc03') no-repeat center center fixed;
+    background: url('./assets/img/background.png') no-repeat center center fixed;
     background-size: cover;
     margin: 0;
     padding: 0;
