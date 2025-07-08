@@ -4,33 +4,40 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard Admin - OnlyFrenck</title>
-  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../style.css" />
 </head>
 <body class="dark">
   <div class="dash-container">
-    <h2>Dashboard Admin</h2>
-    <input type="text" id="search" placeholder="Cerca per nome o email...">
-    <table>
+    <h2>Dashboard Iscrizioni</h2>
+
+    <div class="stat-section">
+      <div class="stat-card" id="totaleIscritti">Totale iscritti: --</div>
+      <div class="stat-card" id="eventoGita">Gita in casone: --</div>
+    </div>
+
+    <input type="text" id="search" placeholder="Cerca per nome, email o evento...">
+
+    <button id="exportCSV">Esporta CSV</button>
+    <button id="logoutBtn">Logout</button>
+
+    <table id="tabella">
       <thead>
         <tr>
           <th>Nome</th>
           <th>Email</th>
           <th>Telefono</th>
           <th>Evento</th>
-          <th>Check-In</th>
+          <th>Messaggio</th>
           <th>Azioni</th>
         </tr>
       </thead>
-      <tbody id="iscritti-body">
-        <!-- Popolato via JS -->
-      </tbody>
+      <tbody></tbody>
     </table>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAxGm1Y26UZzxnYD9TZy9C97saff9oALBA",
@@ -43,64 +50,81 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const auth = getAuth(app);
 
-    const body = document.getElementById('iscritti-body');
-    const searchInput = document.getElementById('search');
+    const tabella = document.querySelector("#tabella tbody");
+    const searchInput = document.getElementById("search");
+    const totaleEl = document.getElementById("totaleIscritti");
+    const eventoGitaEl = document.getElementById("eventoGita");
 
-    onAuthStateChanged(auth, async (user) => {
-      if (!user || user.email !== 'info@onlyfrenck.it') {
-        window.location.href = '/admin/login';
-        return;
-      }
+    let dati = [];
 
-      const querySnapshot = await getDocs(collection(db, 'iscrizioni'));
-      let dati = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    async function caricaDati() {
+      const querySnapshot = await getDocs(collection(db, "iscrizioni"));
+      dati = [];
+      tabella.innerHTML = "";
 
-      function renderTable(data) {
-        body.innerHTML = '';
-        data.forEach(iscritto => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${iscritto.nome}</td>
-            <td>${iscritto.email}</td>
-            <td>${iscritto.telefono}</td>
-            <td>${iscritto.evento}</td>
-            <td><input type="checkbox" ${iscritto.checkin ? 'checked' : ''} data-id="${iscritto.id}" class="checkin-toggle"></td>
-            <td>
-              <button class="delete-btn" data-id="${iscritto.id}">🗑️</button>
-            </td>
-          `;
-          body.appendChild(row);
-        });
-      }
+      let contaGita = 0;
 
-      renderTable(dati);
+      querySnapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        data.id = docSnap.id;
+        dati.push(data);
 
-      searchInput.addEventListener('input', () => {
-        const val = searchInput.value.toLowerCase();
-        const filtrati = dati.filter(i => i.nome?.toLowerCase().includes(val) || i.email?.toLowerCase().includes(val));
-        renderTable(filtrati);
+        if (data.evento === "Gita in casone") contaGita++;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${data.nome}</td>
+          <td>${data.email}</td>
+          <td>${data.telefono}</td>
+          <td>${data.evento}</td>
+          <td>${data.messaggio || "-"}</td>
+          <td><button class="delete-btn" data-id="${data.id}">🗑</button></td>
+        `;
+        tabella.appendChild(tr);
       });
 
-      body.addEventListener('change', async (e) => {
-        if (e.target.classList.contains('checkin-toggle')) {
-          const id = e.target.dataset.id;
-          const ref = doc(db, 'iscrizioni', id);
-          await updateDoc(ref, { checkin: e.target.checked });
-        }
-      });
+      totaleEl.textContent = `Totale iscritti: ${dati.length}`;
+      eventoGitaEl.textContent = `Gita in casone: ${contaGita}`;
+    }
 
-      body.addEventListener('click', async (e) => {
-        if (e.target.classList.contains('delete-btn')) {
-          const id = e.target.dataset.id;
-          if (confirm('Sei sicuro di voler eliminare questa iscrizione?')) {
-            await deleteDoc(doc(db, 'iscrizioni', id));
-            location.reload();
-          }
-        }
+    searchInput.addEventListener("input", () => {
+      const valore = searchInput.value.toLowerCase();
+      const righe = tabella.querySelectorAll("tr");
+      righe.forEach(riga => {
+        const testo = riga.textContent.toLowerCase();
+        riga.style.display = testo.includes(valore) ? "" : "none";
       });
     });
+
+    tabella.addEventListener("click", async (e) => {
+      if (e.target.classList.contains("delete-btn")) {
+        const id = e.target.dataset.id;
+        if (confirm("Vuoi eliminare questa iscrizione?")) {
+          await deleteDoc(doc(db, "iscrizioni", id));
+          caricaDati();
+        }
+      }
+    });
+
+    document.getElementById("exportCSV").addEventListener("click", () => {
+      let csv = "Nome,Email,Telefono,Evento,Messaggio\n";
+      dati.forEach(row => {
+        csv += `${row.nome},${row.email},${row.telefono},${row.evento},"${row.messaggio || ""}"\n`;
+      });
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "iscrizioni.csv";
+      link.click();
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      window.location.href = "/admin/login/";
+    });
+
+    caricaDati();
   </script>
 </body>
 </html>
