@@ -6,7 +6,7 @@ body.dark {
   padding: 0;
 }
 
-.dash-container {
+.login-container, .dash-container {
   max-width: 1200px;
   margin: 30px auto;
   padding: 20px;
