@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login Admin - OnlyFrenck</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body class="dark">
+  <div class="login-container">
+    <h2>Accesso Admin</h2>
+    <form id="login-form">
+      <input type="email" id="email" placeholder="Email" required>
+      <input type="password" id="password" placeholder="Password" required>
+      <button type="submit">Accedi</button>
+    </form>
+    <p id="error-message" class="error"></p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAxGm1Y26UZzxnYD9TZy9C97saff9oALBA",
+      authDomain: "iscrizioni-a-evento.firebaseapp.com",
+      projectId: "iscrizioni-a-evento",
+      storageBucket: "iscrizioni-a-evento.appspot.com",
+      messagingSenderId: "226347394046",
+      appId: "1:226347394046:web:4bf0724fdf84e3cb02d6af"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const loginForm = document.getElementById('login-form');
+    const errorMessage = document.getElementById('error-message');
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        if (user.email === 'info@onlyfrenck.it') {
+          window.location.href = '/admin/dash/';
+        } else {
+          errorMessage.textContent = 'Accesso negato: non sei autorizzato.';
+        }
+      } catch (error) {
+        errorMessage.textContent = 'Credenziali non valide.';
+        console.error(error);
+      }
+    });
+  </script>
+</body>
+</html>

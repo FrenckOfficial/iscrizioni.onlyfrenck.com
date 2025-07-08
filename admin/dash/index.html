@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Admin - OnlyFrenck</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body class="dark">
+  <div class="dash-container">
+    <h2>Dashboard Admin</h2>
+    <input type="text" id="search" placeholder="Cerca per nome o email...">
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Email</th>
+          <th>Telefono</th>
+          <th>Evento</th>
+          <th>Check-In</th>
+          <th>Azioni</th>
+        </tr>
+      </thead>
+      <tbody id="iscritti-body">
+        <!-- Popolato via JS -->
+      </tbody>
+    </table>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAxGm1Y26UZzxnYD9TZy9C97saff9oALBA",
+      authDomain: "iscrizioni-a-evento.firebaseapp.com",
+      projectId: "iscrizioni-a-evento",
+      storageBucket: "iscrizioni-a-evento.appspot.com",
+      messagingSenderId: "226347394046",
+      appId: "1:226347394046:web:4bf0724fdf84e3cb02d6af"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const body = document.getElementById('iscritti-body');
+    const searchInput = document.getElementById('search');
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user || user.email !== 'info@onlyfrenck.it') {
+        window.location.href = '/admin/login';
+        return;
+      }
+
+      const querySnapshot = await getDocs(collection(db, 'iscrizioni'));
+      let dati = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      function renderTable(data) {
+        body.innerHTML = '';
+        data.forEach(iscritto => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${iscritto.nome}</td>
+            <td>${iscritto.email}</td>
+            <td>${iscritto.telefono}</td>
+            <td>${iscritto.evento}</td>
+            <td><input type="checkbox" ${iscritto.checkin ? 'checked' : ''} data-id="${iscritto.id}" class="checkin-toggle"></td>
+            <td>
+              <button class="delete-btn" data-id="${iscritto.id}">🗑️</button>
+            </td>
+          `;
+          body.appendChild(row);
+        });
+      }
+
+      renderTable(dati);
+
+      searchInput.addEventListener('input', () => {
+        const val = searchInput.value.toLowerCase();
+        const filtrati = dati.filter(i => i.nome?.toLowerCase().includes(val) || i.email?.toLowerCase().includes(val));
+        renderTable(filtrati);
+      });
+
+      body.addEventListener('change', async (e) => {
+        if (e.target.classList.contains('checkin-toggle')) {
+          const id = e.target.dataset.id;
+          const ref = doc(db, 'iscrizioni', id);
+          await updateDoc(ref, { checkin: e.target.checked });
+        }
+      });
+
+      body.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('delete-btn')) {
+          const id = e.target.dataset.id;
+          if (confirm('Sei sicuro di voler eliminare questa iscrizione?')) {
+            await deleteDoc(doc(db, 'iscrizioni', id));
+            location.reload();
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
