@@ -15,10 +15,23 @@ body.dark {
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
 }
 
+#login-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  background-color: #1e1e1e;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+  padding: 20px;
+  margin: 0 auto;
+}
+
 h2 {
   text-align: center;
   margin-bottom: 25px;
   font-size: 28px;
+  margin: 30px auto;
 }
 
 .stat-section {
@@ -44,7 +57,7 @@ h2 {
     max-width: 1200px;
 }
 
-input[type="text"] {
+input[type="text"] input[type="email"] input[type="password"] {
   width: 100%;
   padding: 12px;
   margin-bottom: 20px;
