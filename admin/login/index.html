@@ -62,14 +62,12 @@
       }
     });
 
-    import { getAuth, signInWithPopup, GoogleAuthProvider, GithubAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
-    const authGG = getAuth();
+    import { signInWithPopup, GoogleAuthProvider, GithubAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     document.getElementById("googleLogin").addEventListener("click", async () => {
       const provider = new GoogleAuthProvider();
       try {
-        const result = await signInWithPopup(authGG, provider);
+        const result = await signInWithPopup(auth, provider);
         window.location.href = "/admin/dash/";
       } catch (error) {
         alert("Errore login Google: " + error.message);
@@ -79,7 +77,7 @@
     document.getElementById("githubLogin").addEventListener("click", async () => {
       const provider = new GithubAuthProvider();
       try {
-        const result = await signInWithPopup(authGG, provider);
+        const result = await signInWithPopup(auth, provider);
         window.location.href = "/admin/dash/";
       } catch (error) {
         alert("Errore login GitHub: " + error.message);
