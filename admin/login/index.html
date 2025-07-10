@@ -16,6 +16,11 @@
       <button type="submit">Accedi</button>
     </form>
     <p id="error-message" class="error"></p>
+
+    <hr style="margin: 20px 0; border: none; border-top: 1px solid #444;" />
+
+    <button id="googleLogin" class="oauth-btn">Accedi con Google</button>
+    <button id="githubLogin" class="oauth-btn">Accedi con GitHub</button>
   </div>
 
   <script type="module">
@@ -54,6 +59,30 @@
       } catch (error) {
         errorMessage.textContent = 'Credenziali non valide.';
         console.error(error);
+      }
+    });
+
+    import { getAuth, signInWithPopup, GoogleAuthProvider, GithubAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const authGG = getAuth();
+
+    document.getElementById("googleLogin").addEventListener("click", async () => {
+      const provider = new GoogleAuthProvider();
+      try {
+        const result = await signInWithPopup(authGG, provider);
+        window.location.href = "/admin/dash/";
+      } catch (error) {
+        alert("Errore login Google: " + error.message);
+      }
+    });
+
+    document.getElementById("githubLogin").addEventListener("click", async () => {
+      const provider = new GithubAuthProvider();
+      try {
+        const result = await signInWithPopup(authGG, provider);
+        window.location.href = "/admin/dash/";
+      } catch (error) {
+        alert("Errore login GitHub: " + error.message);
       }
     });
   </script>
